@@ -1,0 +1,33 @@
+---
+title: "EDS 223: Homework Assignment 4"
+subtitle: "Identifying Blackout Zones from the 2011 Texas Storm"
+date: 11-17-2026
+author: "Ethan Mathews"
+format: 
+  pdf:
+    toc: false
+    code-fold: false
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+
+### Load in Libraries and Data
+
+```{r}
+#| message: false
+#| warning: false
+#| results: hide
+
+# Load in Libraries
+library(tidyverse)
+library(terra)
+library(sf)
+library(tmap)
+
+# Load in
+
+# Load in
+```
