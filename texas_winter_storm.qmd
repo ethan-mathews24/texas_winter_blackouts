@@ -1,7 +1,7 @@
 ---
 title: "EDS 223: Homework Assignment 4"
-subtitle: "Identifying Blackout Zones from the 2011 Texas Storm"
-date: 11-17-2026
+subtitle: "Identifying Blackout Zones from the 2021 Texas Storm"
+date: date
 author: "Ethan Mathews"
 format: 
   pdf:
@@ -23,11 +23,109 @@ execute:
 
 # Load in Libraries
 library(tidyverse)
+library(here)
 library(terra)
+library(stars)
 library(sf)
 library(tmap)
 
-# Load in
+# Load in Night Lights data
+# Read in each .tif for each date
+night_feb_07_h5 <- read_stars(here(
+  "data",
+  "VNP46A1",
+  "VNP46A1.A2021038.h08v05.001.2021039064328.tif"
+))
+night_feb_07_h6 <- read_stars(here(
+  "data",
+  "VNP46A1",
+  "VNP46A1.A2021038.h08v06.001.2021039064329.tif"
+))
+night_feb_16_h5 <- read_stars(here(
+  "data",
+  "VNP46A1",
+  "VNP46A1.A2021047.h08v05.001.2021048091106.tif"
+))
+night_feb_16_h6 <- read_stars(here(
+  "data",
+  "VNP46A1",
+  "VNP46A1.A2021047.h08v06.001.2021048091105.tif"
+))
 
-# Load in
+# Combine the two tiles for each date
+night_lights_feb_07 <- st_mosaic(night_feb_07_h5, night_feb_07_h6)
+night_lights_feb_16 <- st_mosaic(night_feb_16_h5, night_feb_16_h6)
+
+
+# Load in Roads data
+# SQL query to select only motorway
+roads_query <- "SELECT * FROM gis_osm_roads_free_1 WHERE fclass='motorway'"
+
+# Load in Roads data with query
+highway <- st_read(
+  here("data", "gis_osm_roads_free_1.gpkg"),
+  query = roads_query,
+  quiet = TRUE # ignore warning message
+)
+
+# Load in Houses data
+# SQL query to select only residential buildings
+houses_query <- "SELECT *
+                 FROM gis_osm_buildings_a_free_1
+                 WHERE (type IS NULL AND name IS NULL)
+                 OR type IN ('residential', 'apartments', 'house', 'static_caravan', 'detached')"
+
+# Load in Houses data with query
+houses <- st_read(
+  here("data", "gis_osm_buildings_a_free_1.gpkg"),
+  query = houses_query,
+  quiet = TRUE # ignore warning message
+)
+```
+
+
+### Transform Data to Match CRSs
+
+```{r}
+# Transform CRSs
+if (st_crs(highway) != st_crs(houses)) {
+  warning(
+    "Highways and houses have different CRS; transforming houses to match."
+  )
+  houses <- st_transform(houses, st_crs(highway))
+}
+
+# Verify
+st_crs(highway) == st_crs(houses)
+
+```
+
+
+### Create Blackout mask
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+# quick plot
+
+tm_shape(houses) +
+  tm_basemap("OpenStreetMap") +
+  tm_dots()
+```
+
+
+```{r}
+# quick plot
+
+tm_shape(roads) +
+  tm_basemap("OpenStreetMap") +
+  tm_lines()
 ```

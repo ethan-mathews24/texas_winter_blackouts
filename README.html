@@ -61,6 +61,7 @@ ul.task-list li input[type="checkbox"] {
 </p>
 <section id="purpose-of-this-repository" class="level2">
 <h2 class="anchored" data-anchor-id="purpose-of-this-repository">Purpose of this Repository</h2>
+<p>In February 2021, three severe winter storms swept across the United States, causing a major power crisis in Texas that left millions without electricity during freezing temperatures. As climate change increases the frequency and intensity of extreme weather events, understanding where and how these impacts are felt is increasingly important. This project estimates the number of homes in the Houston metropolitan area that lost power by comparing night light intensity from NASA’s VIIRS (VNP46A1) satellite data before and after the storms. Areas that experienced a significant drop in light were identified as blackout zones. These blackout areas were then spatially joined with OpenStreetMap building data to estimate how many homes were affected.</p>
 </section>
 <section id="package-dependencies" class="level2">
 <h2 class="anchored" data-anchor-id="package-dependencies">Package Dependencies</h2>
@@ -88,11 +89,33 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="data-informationaccess" class="level2">
 <h2 class="anchored" data-anchor-id="data-informationaccess">Data Information/Access</h2>
-<section id="data" class="level4">
-<h4 class="anchored" data-anchor-id="data">Data</h4>
+<section id="night-lights" class="level4">
+<h4 class="anchored" data-anchor-id="night-lights">Night Lights</h4>
+<p>This analysis uses NASA’s Worldview to explore the data around the day of the storm. There are several days with too much cloud cover to be useful, but 2021-02-07 and 2021-02-16 provide two clear, contrasting images to visualize the extent of the power outage in Texas.</p>
+<p>VIIRS data is distributed through NASA’s <a href="https://ladsweb.modaps.eosdis.nasa.gov/">Level-1 and Atmospheric Archive &amp; Distribution System Distributed Active Archive Center (LAADS DAAC)</a>.</p>
+<p>To prevent this analysis from being a large data wrangling challenge, we have downloaded and prepped the following files for you to work with, stored in the <code>VNP46A1</code> folder.</p>
+<p>Data files:</p>
+<ul>
+<li><code>VNP46A1.A2021038.h08v05.001.2021039064328.tif</code>: tile h08v05, collected on 2021-02-07</li>
+<li><code>VNP46A1.A2021038.h08v06.001.2021039064329.tif</code>: tile h08v06, collected on 2021-02-07</li>
+<li><code>VNP46A1.A2021047.h08v05.001.2021048091106.tif</code>: tile h08v05, collected on 2021-02-16</li>
+<li><code>VNP46A1.A2021047.h08v06.001.2021048091105.tif</code>: tile h08v06, collected on 2021-02-16</li>
+</ul>
 </section>
-<section id="data-1" class="level4">
-<h4 class="anchored" data-anchor-id="data-1">Data</h4>
+<section id="roads" class="level4">
+<h4 class="anchored" data-anchor-id="roads">Roads</h4>
+<p>Highways account for a large portion of the night lights observable from space (see Google’s <a href="https://earth.google.com/web/data=MkEKPwo9CiExMzY2MmI4dER6am1uT1I3RFFnUUxaSlJPbDl5SFF2X3YSFgoUMDAwNjEzMUVFNjJCOTgwOUJCQkQgAUICCABKCAiJ1OmVAhAB">Earth at Night</a>). To minimize falsely identifying areas with reduced traffic as areas without power, we ignored areas near highways.</p>
+<p><a href="https://planet.openstreetmap.org/">OpenStreetMap (OSM)</a> is a collaborative project which creates publicly available geographic data of the world. Ingesting this data into a database where it can be subsetted and processed is a large undertaking. Fortunately, third party companies redistribute OSM data. We used <a href="https://download.geofabrik.de/">Geofabrik’s download sites</a> to retrieve a shapefile of all highways in Texas and prepared a Geopackage (<code>.gpkg</code> file) containing just the subset of roads that intersect the Houston metropolitan area.</p>
+<ul>
+<li><code>gis_osm_roads_free_1.gpkg</code></li>
+</ul>
+</section>
+<section id="houses" class="level4">
+<h4 class="anchored" data-anchor-id="houses">Houses</h4>
+<p>We can also obtain building data from OpenStreetMap. We again downloaded from Geofabrick and prepared a GeoPackage containing only houses in the Houston metropolitan area.</p>
+<ul>
+<li><code>gis_osm_buildings_a_free_1.gpkg</code></li>
+</ul>
 </section>
 </section>
 <section id="authors-and-contributors" class="level2">
