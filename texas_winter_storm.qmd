@@ -212,6 +212,9 @@ There were approximately 139,146 houses that were affected by the blackout.
 ## Map the Affected Areas
 
 ```{r}
+#| fig-width: 9
+#| fig-height: 6
+
 tm_basemap("OpenStreetMap") +
 
   tm_shape(houses) +
@@ -220,7 +223,7 @@ tm_basemap("OpenStreetMap") +
 
   tm_shape(highway) +
 
-  tm_lines(col = "darkgoldenrod3", lwd = 0.8) +
+  tm_lines(col = "darkgoldenrod1", lwd = 0.8) +
 
   tm_shape(houses_blackout) +
 
@@ -230,14 +233,13 @@ tm_basemap("OpenStreetMap") +
     type = "symbols",
     labels = c("Did not lose power", "Lost power"),
     title = "Homes",
-    fill = c("dodgerblue", "red1"),
-    position = tm_pos_out("right", "center")
+    fill = c("dodgerblue", "red1")
   ) +
 
   tm_add_legend(
     type = "lines",
     labels = "Highway",
-    col = "darkgoldenrod3"
+    col = "darkgoldenrod1"
   ) +
 
   tm_title("Houston Homes That Lost Power, Feb 2021 Winter Storms") +

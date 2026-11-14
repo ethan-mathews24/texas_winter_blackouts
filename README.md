@@ -52,6 +52,7 @@ EDS223-HWK4
 ├── README_files
 ├── README.html
 ├── README.md
+|── texas_winter_storm.pdf
 └── texas_winter_storm.qmd
 ```
 
@@ -73,7 +74,7 @@ IMAGE GOES HERE
 
 ## Data Information/Access
 
-#### Night Lights
+### Night Lights
 This analysis uses NASA’s Worldview to explore the data around the day of the storm. There are several days with too much cloud cover to be useful, but 2021-02-07 and 2021-02-16 provide two clear, contrasting images to visualize the extent of the power outage in Texas.
 
 VIIRS data is distributed through NASA’s [Level-1 and Atmospheric Archive & Distribution System Distributed Active Archive Center (LAADS DAAC)](https://ladsweb.modaps.eosdis.nasa.gov/).
@@ -88,7 +89,7 @@ Data files:
 - `VNP46A1.A2021047.h08v06.001.2021048091105.tif`: tile h08v06, collected on 2021-02-16
 
 
-#### Roads
+### Roads
 Highways account for a large portion of the night lights observable from space (see Google’s [Earth at Night](https://earth.google.com/web/data=MkEKPwo9CiExMzY2MmI4dER6am1uT1I3RFFnUUxaSlJPbDl5SFF2X3YSFgoUMDAwNjEzMUVFNjJCOTgwOUJCQkQgAUICCABKCAiJ1OmVAhAB)). To minimize falsely identifying areas with reduced traffic as areas without power, we ignored areas near highways.
 
 [OpenStreetMap (OSM)](https://planet.openstreetmap.org/) is a collaborative project which creates publicly available geographic data of the world. Ingesting this data into a database where it can be subsetted and processed is a large undertaking. Fortunately, third party companies redistribute OSM data. We used [Geofabrik’s download sites](https://download.geofabrik.de/) to retrieve a shapefile of all highways in Texas and prepared a Geopackage (`.gpkg` file) containing just the subset of roads that intersect the Houston metropolitan area.
@@ -96,7 +97,7 @@ Highways account for a large portion of the night lights observable from space (
 - `gis_osm_roads_free_1.gpkg`
 
 
-#### Houses
+### Houses
 We can also obtain building data from OpenStreetMap. We again downloaded from Geofabrick and prepared a GeoPackage containing only houses in the Houston metropolitan area.
 
 - `gis_osm_buildings_a_free_1.gpkg`
@@ -111,4 +112,6 @@ Contributor: [Annie Adams](https://github.com/annieradams)
 
 
 
-## Citations
+## Data Citations
+
+Geofabrik. (n.d.). US South [OpenStreetMap data extract]. Retrieved November 12, 2026, from https://download.geofabrik.de/north-america/us-south.html
