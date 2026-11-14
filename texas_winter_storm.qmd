@@ -1,7 +1,7 @@
 ---
 title: "EDS 223: Homework Assignment 4"
 subtitle: "Identifying Blackout Zones from the 2021 Texas Storm"
-date: date
+date: today
 author: "Ethan Mathews"
 format: 
   pdf:
@@ -14,7 +14,7 @@ execute:
 ---
 
 
-### Load in Libraries and Data
+## Load in Libraries and Data
 
 ```{r}
 #| message: false
@@ -84,48 +84,170 @@ houses <- st_read(
 ```
 
 
-### Transform Data to Match CRSs
 
+#### Transform Data to Match CRSs
 ```{r}
 # Transform CRSs
+highway <- st_transform(highway, crs = "EPSG:3083")
+houses <- st_transform(houses, crs = "EPSG:3083")
+
+
+# Run conditional to make sure transform worked
 if (st_crs(highway) != st_crs(houses)) {
   warning(
-    "Highways and houses have different CRS; transforming houses to match."
+    "Highways and houses have different CRS"
   )
-  houses <- st_transform(houses, st_crs(highway))
+}
+
+# Verify CRSs match
+st_crs(highway) == st_crs(houses)
+```
+
+
+
+## Create Blackout Mask
+```{r}
+# Create new raster objects
+pre_storm <- night_lights_feb_07
+post_storm <- night_lights_feb_16
+
+# Calculate difference (change) in night light intensity
+light_diff <- pre_storm - post_storm
+
+# Verify the difference contains increase and decrease
+if (
+    !(any(light_diff[[1]] > 0, na.rm = TRUE) &
+        any(light_diff[[1]] < 0, na.rm = TRUE))
+) {
+    warning(
+        "Raster calculating the difference does not contain both positive and negative values"
+    )
+}
+```
+
+
+#### Reclassify the cells
+```{r}
+# Reclassify the cells and drop any less than 200 nW cm⁻²sr⁻¹
+blackout_mask <- light_diff
+blackout_mask[blackout_mask < 200] <- NA
+
+# Verify it worked and is not empty
+if (all(is.na(blackout_mask[[1]]))) {
+  stop("Blackout mask is empty and no cells exceed the determined threshold")
+}
+```
+
+
+#### Vectorize the mask 
+```{r}
+blackout_vector <- st_as_sf(blackout_mask) |>
+  st_make_valid()
+```
+
+
+#### Crop the vectorized raster to Houston
+```{r}
+# Make the area (Houston) a polygon
+
+# Create the bbox extent of Houston
+houston_bbox <- st_bbox(
+  c(xmin = -96.5, ymin = 29, xmax = -94.5, ymax = 30.5),
+  crs = st_crs(blackout_vector)
+)
+
+houston_blackout <- st_crop(blackout_vector, houston_bbox)
+```
+
+
+#### Reproject and Verify the CRS of the Datasets
+```{r}
+# Reproject to proper EPSG (EPSD:3083)
+houston_blackout <- st_transform(houston_blackout, crs = "EPSG:3083")
+
+# Run check to make sure houses matches houston CRS
+if (st_crs(houston_blackout) != st_crs(houses)) {
+  stop("Update CRSs so they match!")
+}
+
+# Run check to make sure highways matches houston CRS
+if (st_crs(houston_blackout) != st_crs(highway)) {
+  stop("Update CRSs so they match!")
 }
 
 # Verify
-st_crs(highway) == st_crs(houses)
-
-```
-
-
-### Create Blackout mask
-
-```{r}
-
-```
-
-```{r}
-
+st_crs(houston_blackout) == st_crs(houses)
+st_crs(houston_blackout) == st_crs(highway)
 ```
 
 
 
+## Exclude Highways from the Cropped Blackout Mask
 ```{r}
-# quick plot
+# Create a 200m buffer around highways
+highway_buffer <- st_buffer(highway, dist = 200)
 
-tm_shape(houses) +
-  tm_basemap("OpenStreetMap") +
-  tm_dots()
+# Use union to combine geometries
+highway_union <- st_union(highway_buffer)
+
+# Remove areas further away from 200 meters from highways
+blackout_no_highways <- houston_blackout |>
+  st_filter(y = highway_union, .predicate = st_disjoint)
 ```
 
 
-```{r}
-# quick plot
 
-tm_shape(roads) +
-  tm_basemap("OpenStreetMap") +
-  tm_lines()
+## Identify Homes Likely Impacted by Blackouts
+```{r}
+# Filter the houses that relate to blackout area
+houses_blackout <- houses |>
+  st_filter(blackout_no_highways)
+
+# Print the houses affected by blackout
+n_houses <- nrow(houses_blackout)
+```
+
+There were approximately 139,146 houses that were affected by the blackout.
+
+## Map the Affected Areas
+
+```{r}
+tm_basemap("OpenStreetMap") +
+
+  tm_shape(houses) +
+
+  tm_dots(fill = "dodgerblue", size = 0.02) +
+
+  tm_shape(highway) +
+
+  tm_lines(col = "darkgoldenrod3", lwd = 0.8) +
+
+  tm_shape(houses_blackout) +
+
+  tm_dots(fill = "red1", size = 0.02) +
+
+  tm_add_legend(
+    type = "symbols",
+    labels = c("Did not lose power", "Lost power"),
+    title = "Homes",
+    fill = c("dodgerblue", "red1"),
+    position = tm_pos_out("right", "center")
+  ) +
+
+  tm_add_legend(
+    type = "lines",
+    labels = "Highway",
+    col = "darkgoldenrod3"
+  ) +
+
+  tm_title("Houston Homes That Lost Power, Feb 2021 Winter Storms") +
+
+  tm_layout(
+    legend.position = tm_pos_out("right", "center"),
+    legend.frame = TRUE
+  ) +
+
+  tm_scalebar(position = c("left", "bottom"), text.size = 0.5) +
+
+  tm_compass(position = c("right", "top"), size = 1.5)
 ```
