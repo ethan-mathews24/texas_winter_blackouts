@@ -160,7 +160,7 @@ houston_blackout <- st_crop(blackout_vector, houston_bbox)
 ```
 
 
-#### Reproject and Verify the CRS of the Datasets
+#### Reproject and Verify the Dataset's CRS
 ```{r}
 # Reproject to proper EPSG (EPSD:3083)
 houston_blackout <- st_transform(houston_blackout, crs = "EPSG:3083")
@@ -209,7 +209,7 @@ n_houses <- nrow(houses_blackout)
 
 There were approximately 139,146 houses that were affected by the blackout.
 
-## Map the Affected Areas
+## Map of the Homes that Lost Power
 
 ```{r}
 #| fig-width: 9
@@ -219,7 +219,7 @@ tm_basemap("OpenStreetMap") +
 
   tm_shape(houses) +
 
-  tm_dots(fill = "dodgerblue", size = 0.02) +
+  tm_dots(fill = "dodgerblue", size = 0.01, fill_alpha = 0.3) +
 
   tm_shape(highway) +
 
@@ -227,7 +227,7 @@ tm_basemap("OpenStreetMap") +
 
   tm_shape(houses_blackout) +
 
-  tm_dots(fill = "red1", size = 0.02) +
+  tm_dots(fill = "red1", size = 0.01, fill_alpha = 0.3) +
 
   tm_add_legend(
     type = "symbols",
@@ -252,4 +252,82 @@ tm_basemap("OpenStreetMap") +
   tm_scalebar(position = c("left", "bottom"), text.size = 0.5) +
 
   tm_compass(position = c("right", "top"), size = 1.5)
+```
+
+
+
+## Comparing Night Light Intensities
+```{r}
+# Clip extent of the raster layers
+pre_storm_houston <- st_crop(pre_storm, houston_bbox)
+post_storm_houston <- st_crop(post_storm, houston_bbox)
+
+```
+
+```{r}
+light_scale <- tm_scale_intervals(
+  breaks = c(0, 125, 250, 500, 1000, 2000, 5000, Inf),
+  values = "inferno"
+)
+```
+
+```{r}
+#| fig-width: 6
+#| fig-height: 5
+
+# Map of Night Lights Intensity Pre Storm
+
+tm_shape(pre_storm_houston) +
+
+  tm_raster(
+    col.legend = tm_legend(title = "Light Intensity (nW cm⁻² sr⁻¹)"),
+    col.scale = light_scale
+  ) +
+
+  tm_graticules(col = "white", lwd = 0.65, alpha = 0.2, labels.size = 0.5) +
+
+  tm_scalebar(
+    position = tm_pos_out("right", "center"),
+    text.size = 0.5,
+    bg.color = "white"
+  ) +
+
+  tm_layout(
+    legend.position = tm_pos_out("right", "center"),
+    legend.frame = TRUE
+  ) +
+
+  tm_title(
+    "Houston Night Light Intensities\nFeb 07, 2021 (Pre Storm)",
+    size = 0.8
+  )
+```
+
+
+```{r}
+#| fig-width: 6
+#| fig-height: 5
+
+# Map of Night Lights Intensity Post Storm
+
+tm_shape(post_storm_houston) +
+
+  tm_raster(
+    col.legend = tm_legend(title = "Light Intensity (nW cm⁻² sr⁻¹)"),
+    col.scale = light_scale
+  ) +
+
+  tm_graticules(col = "white", lwd = 0.65, alpha = 0.2, labels.size = 0.5) +
+
+  tm_scalebar(position = tm_pos_out("right", "center"), text.size = 0.5) +
+
+  tm_layout(
+    legend.position = tm_pos_out("right", "center"),
+    legend.frame = TRUE
+  ) +
+
+  tm_title(
+    "Houston Night Light Intensities\nFeb 16, 2021 (Post Storms)",
+    size = 0.8
+  )
 ```
