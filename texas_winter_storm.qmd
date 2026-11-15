@@ -71,7 +71,9 @@ highway <- st_read(
 houses_query <- "SELECT *
                  FROM gis_osm_buildings_a_free_1
                  WHERE (type IS NULL AND name IS NULL)
-                 OR type IN ('residential', 'apartments', 'house', 'static_caravan', 'detached')"
+                 OR type IN 
+                 ('residential', 'apartments', 
+                 'house', 'static_caravan', 'detached')"
 
 # Load in residential data with query
 houses <- st_read(
@@ -142,8 +144,8 @@ names(combined_storm) <- c(
 ```
 
 ```{r}
-#| fig-width: 8
-#| fig-height: 5
+#| fig-width: 9
+#| fig-height: 6
 
 # Map of Night Lights Intensity Pre Storm
 
@@ -153,8 +155,8 @@ tm_shape(combined_storm) +
     col.legend = tm_legend(
       title = "Light Intensity (nW cm⁻² sr⁻¹)",
       orientation = "landscape",
-      title.size = 0.5,
-      text.size = 0.5
+      title.size = 0.7,
+      text.size = 0.7
     ),
     col.scale = tm_scale(values = "inferno")
   ) +
@@ -179,13 +181,12 @@ tm_shape(combined_storm) +
       "February 7, 2021 (Pre-Storm)",
       "February 16, 2021 (Post-Storm)"
     ),
-    fontfamily = "arial",
-    panel.label.size = 0.6
+    panel.label.size = 1.0
   ) +
 
   tm_title(
     "Houston Night Light Intensities Before and After Winter Storm",
-    size = 0.5
+    size = 1.2
   )
 ```
 
@@ -329,3 +330,8 @@ tm_basemap("OpenStreetMap") +
 
   tm_compass(position = c("right", "top"), size = 1.5)
 ```
+
+
+## Reflection
+
+Comparing VIIRS night lights from February 7 and February 16, 2021 shows a widespread drop in light intensity across Houston after the winter storms. After identifying cells with a decrease greater than 200 nW cm⁻² sr⁻¹ and excluding areas within 200 m of highways, an estimated 157,408 homes lost power. This approach has several limitations. The 200 nW cm⁻² sr⁻¹ threshold is somewhat arbitrary, the comparison relies on only two cloud-free dates, and the coarse raster resolution means entire cells are labeled as blackouts. OpenStreetMap building data may also be incomplete and not have the correct building classification. Finally, this analysis does not examine whether impacts differed across socioeconomic groups.
