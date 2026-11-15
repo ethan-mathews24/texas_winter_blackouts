@@ -21,61 +21,59 @@ execute:
 #| warning: false
 #| results: hide
 
-# Load in Libraries
-library(tidyverse)
-library(here)
-library(terra)
-library(stars)
-library(sf)
-library(tmap)
+# Load in required libraries
+library(tidyverse) # Data manipulation and visualization
+library(here) # File path management
+library(terra) # Raster data processing
+library(stars) # Spatiotemporal array
+library(sf) # Spatial data handling
+library(tmap) # Thematic mapping
+
 
 # Load in Night Lights data
 # Read in each .tif for each date
-night_feb_07_h5 <- read_stars(here(
+light_feb_07_h5 <- read_stars(here(
   "data",
   "VNP46A1",
   "VNP46A1.A2021038.h08v05.001.2021039064328.tif"
 ))
-night_feb_07_h6 <- read_stars(here(
+light_feb_07_h6 <- read_stars(here(
   "data",
   "VNP46A1",
   "VNP46A1.A2021038.h08v06.001.2021039064329.tif"
 ))
-night_feb_16_h5 <- read_stars(here(
+light_feb_16_h5 <- read_stars(here(
   "data",
   "VNP46A1",
   "VNP46A1.A2021047.h08v05.001.2021048091106.tif"
 ))
-night_feb_16_h6 <- read_stars(here(
+light_feb_16_h6 <- read_stars(here(
   "data",
   "VNP46A1",
   "VNP46A1.A2021047.h08v06.001.2021048091105.tif"
 ))
 
-# Combine the two tiles for each date
-night_lights_feb_07 <- st_mosaic(night_feb_07_h5, night_feb_07_h6)
-night_lights_feb_16 <- st_mosaic(night_feb_16_h5, night_feb_16_h6)
 
-
-# Load in Roads data
+# Load in OpenStreetMap data
 # SQL query to select only motorway
 roads_query <- "SELECT * FROM gis_osm_roads_free_1 WHERE fclass='motorway'"
 
-# Load in Roads data with query
+# Load in motorway data with query
 highway <- st_read(
   here("data", "gis_osm_roads_free_1.gpkg"),
   query = roads_query,
   quiet = TRUE # ignore warning message
 )
 
-# Load in Houses data
+
+# Load in OpenStreetMap data
 # SQL query to select only residential buildings
 houses_query <- "SELECT *
                  FROM gis_osm_buildings_a_free_1
                  WHERE (type IS NULL AND name IS NULL)
                  OR type IN ('residential', 'apartments', 'house', 'static_caravan', 'detached')"
 
-# Load in Houses data with query
+# Load in residential data with query
 houses <- st_read(
   here("data", "gis_osm_buildings_a_free_1.gpkg"),
   query = houses_query,
@@ -88,8 +86,8 @@ houses <- st_read(
 #### Transform Data to Match CRSs
 ```{r}
 # Transform CRSs
-highway <- st_transform(highway, crs = "EPSG:3083")
-houses <- st_transform(houses, crs = "EPSG:3083")
+highway <- st_transform(highway, crs = 3083)
+houses <- st_transform(houses, crs = 3083)
 
 
 # Run conditional to make sure transform worked
@@ -105,99 +103,167 @@ st_crs(highway) == st_crs(houses)
 
 
 
-## Create Blackout Mask
+## Comparing Night Light Intensities
 ```{r}
-# Create new raster objects
-pre_storm <- night_lights_feb_07
-post_storm <- night_lights_feb_16
+# Combine the two tiles for each date
+pre_storm <- st_mosaic(light_feb_07_h5, light_feb_07_h6) # pre storm
+post_storm <- st_mosaic(light_feb_16_h5, light_feb_16_h6) # during blackouts
 
-# Calculate difference (change) in night light intensity
-light_diff <- pre_storm - post_storm
-
-# Verify the difference contains increase and decrease
-if (
-    !(any(light_diff[[1]] > 0, na.rm = TRUE) &
-        any(light_diff[[1]] < 0, na.rm = TRUE))
-) {
-    warning(
-        "Raster calculating the difference does not contain both positive and negative values"
-    )
-}
-```
-
-
-#### Reclassify the cells
-```{r}
-# Reclassify the cells and drop any less than 200 nW cm⁻²sr⁻¹
-blackout_mask <- light_diff
-blackout_mask[blackout_mask < 200] <- NA
-
-# Verify it worked and is not empty
-if (all(is.na(blackout_mask[[1]]))) {
-  stop("Blackout mask is empty and no cells exceed the determined threshold")
-}
-```
-
-
-#### Vectorize the mask 
-```{r}
-blackout_vector <- st_as_sf(blackout_mask) |>
-  st_make_valid()
-```
-
-
-#### Crop the vectorized raster to Houston
-```{r}
-# Make the area (Houston) a polygon
 
 # Create the bbox extent of Houston
 houston_bbox <- st_bbox(
   c(xmin = -96.5, ymin = 29, xmax = -94.5, ymax = 30.5),
-  crs = st_crs(blackout_vector)
+  crs = st_crs(pre_storm)
 )
 
-houston_blackout <- st_crop(blackout_vector, houston_bbox)
+
+# Clip extent of the raster layers
+pre_storm_houston <- st_crop(pre_storm, houston_bbox)
+post_storm_houston <- st_crop(post_storm, houston_bbox)
+
+
+# Mask unrealistic values (>1000 or <= 0)
+masked_pre_storm <- pre_storm_houston
+masked_pre_storm[(masked_pre_storm > 1000) | (masked_pre_storm <= 0)] <- NA
+
+masked_post_storm <- post_storm_houston
+masked_post_storm[(masked_post_storm > 1000) | (masked_post_storm <= 0)] <- NA
+
+
+# Combine layers for mapping
+combined_storm <- c(masked_pre_storm, masked_post_storm)
+
+
+# Change names for better visualizations
+names(combined_storm) <- c(
+  "February 7, 2021 (Pre-Storm)",
+  "February 16, 2021 (Post-Storm)"
+)
+```
+
+```{r}
+#| fig-width: 8
+#| fig-height: 5
+
+# Map of Night Lights Intensity Pre Storm
+
+tm_shape(combined_storm) +
+
+  tm_raster(
+    col.legend = tm_legend(
+      title = "Light Intensity (nW cm⁻² sr⁻¹)",
+      orientation = "landscape",
+      title.size = 0.5,
+      text.size = 0.5
+    ),
+    col.scale = tm_scale(values = "inferno")
+  ) +
+
+  tm_facets(ncol = 2, free.scales = FALSE) +
+
+  tm_graticules(
+    col = "white",
+    lwd = 0.3,
+    alpha = 0.2,
+    labels.size = 0.5,
+    labels.pos = c("left", "bottom"),
+    n.x = 4,
+    n.y = 4
+  ) +
+
+  tm_layout(
+    scale = 0.8,
+    legend.position = tm_pos_out("center", "bottom"),
+    legend.frame = TRUE,
+    panels.labels = c(
+      "February 7, 2021 (Pre-Storm)",
+      "February 16, 2021 (Post-Storm)"
+    ),
+    fontfamily = "arial",
+    panel.label.size = 0.6
+  ) +
+
+  tm_title(
+    "Houston Night Light Intensities Before and After Winter Storm",
+    size = 0.5
+  )
 ```
 
 
-#### Reproject and Verify the Dataset's CRS
-```{r}
-# Reproject to proper EPSG (EPSD:3083)
-houston_blackout <- st_transform(houston_blackout, crs = "EPSG:3083")
 
+## Create Blackout Mask
+
+#### Reclassify the cells
+```{r}
+# Calculate difference (change) in night light intensity
+light_diff <- rast(pre_storm) - rast(post_storm)
+
+
+# Reclassify the cells and drop any less than 200 nW cm⁻²sr⁻¹
+rcl <- matrix(
+  c(
+    -Inf,
+    200,
+    NA,
+    200,
+    Inf,
+    1
+  ),
+  ncol = 3,
+  byrow = TRUE
+)
+
+blackout_mask <- classify(light_diff, rcl = rcl)
+
+
+# Vectorize the raster into polygons
+blackout_vector <- st_as_stars(blackout_mask) |>
+  st_as_sf() |>
+  st_make_valid()
+
+
+# Crop the polygon to Houston extent
+houston_blackout <- st_crop(blackout_vector, houston_bbox) |>
+  st_transform(crs = "EPSG:3083")
+```
+
+#### Verify CRS's
+```{r}
 # Run check to make sure houses matches houston CRS
 if (st_crs(houston_blackout) != st_crs(houses)) {
   stop("Update CRSs so they match!")
 }
+
 
 # Run check to make sure highways matches houston CRS
 if (st_crs(houston_blackout) != st_crs(highway)) {
   stop("Update CRSs so they match!")
 }
 
+
 # Verify
 st_crs(houston_blackout) == st_crs(houses)
 st_crs(houston_blackout) == st_crs(highway)
 ```
 
-
-
-## Exclude Highways from the Cropped Blackout Mask
+#### Exclude Highways from the Cropped Blackout Mask
 ```{r}
 # Create a 200m buffer around highways
-highway_buffer <- st_buffer(highway, dist = 200)
+highway_buffer <- highway |>
+  st_union() |>
+  st_buffer(dist = 200)
 
-# Use union to combine geometries
-highway_union <- st_union(highway_buffer)
 
-# Remove areas further away from 200 meters from highways
-blackout_no_highways <- houston_blackout |>
-  st_filter(y = highway_union, .predicate = st_disjoint)
+# Remove highway buffers from blackout areas
+blackout_no_highways <- st_difference(houston_blackout, highway_buffer)
+
+
+# Identify buildings in blackout areas
+blackout_homes <- st_intersection(houses, blackout_no_highways)
+
 ```
 
-
-
-## Identify Homes Likely Impacted by Blackouts
+#### Identify Homes Likely Impacted by Blackouts
 ```{r}
 # Filter the houses that relate to blackout area
 houses_blackout <- houses |>
@@ -207,127 +273,59 @@ houses_blackout <- houses |>
 n_houses <- nrow(houses_blackout)
 ```
 
-There were approximately 139,146 houses that were affected by the blackout.
+There were approximately 157,408 houses that were affected by the blackout.
+
+#### Improve data for mapping
+```{r}
+# Create points for mapping homes
+all_homes <- st_centroid(houses)
+not_impacted_homes <- all_homes[!all_homes$osm_id %in% blackout_homes$osm_id, ]
+impacted_homes <- st_centroid(blackout_homes)
+```
 
 ## Map of the Homes that Lost Power
-
 ```{r}
 #| fig-width: 9
 #| fig-height: 6
 
 tm_basemap("OpenStreetMap") +
 
-  tm_shape(houses) +
-
-  tm_dots(fill = "dodgerblue", size = 0.01, fill_alpha = 0.3) +
-
   tm_shape(highway) +
-
   tm_lines(col = "darkgoldenrod1", lwd = 0.8) +
 
-  tm_shape(houses_blackout) +
+  tm_shape(not_impacted_homes) +
+  tm_dots(fill = "chartreuse2", size = 0.01, fill_alpha = 0.3) +
 
-  tm_dots(fill = "red1", size = 0.01, fill_alpha = 0.3) +
+  tm_shape(impacted_homes) +
+  tm_dots(fill = "firebrick1", size = 0.01, fill_alpha = 0.5) +
 
   tm_add_legend(
     type = "symbols",
-    labels = c("Did not lose power", "Lost power"),
-    title = "Homes",
-    fill = c("dodgerblue", "red1")
+    labels = c("Power lost", "Power maintained"),
+    fill = c("firebrick1", "chartreuse2"),
+    shape = 21,
+    size = 0.6,
+    title = "Homes"
+  ) +
+
+  tm_title("Houston Homes Impacted by Feb 2021 Winter Storms") +
+
+  tm_layout(
+    legend.position = tm_pos_in("left", "top"),
+    legend.bg.color = "white",
+    legend.text.size = 0.6,
+    legend.title.size = 0.8,
+    legend.frame = TRUE
   ) +
 
   tm_add_legend(
     type = "lines",
-    labels = "Highway",
-    col = "darkgoldenrod1"
+    labels = "Major Highway",
+    col = "darkgoldenrod1",
+    lwd = 0.8
   ) +
 
-  tm_title("Houston Homes That Lost Power, Feb 2021 Winter Storms") +
-
-  tm_layout(
-    legend.position = tm_pos_out("right", "center"),
-    legend.frame = TRUE
-  ) +
-
-  tm_scalebar(position = c("left", "bottom"), text.size = 0.5) +
+  tm_scalebar(position = c("right", "bottom"), text.size = 0.5) +
 
   tm_compass(position = c("right", "top"), size = 1.5)
-```
-
-
-
-## Comparing Night Light Intensities
-```{r}
-# Clip extent of the raster layers
-pre_storm_houston <- st_crop(pre_storm, houston_bbox)
-post_storm_houston <- st_crop(post_storm, houston_bbox)
-
-```
-
-```{r}
-light_scale <- tm_scale_intervals(
-  breaks = c(0, 125, 250, 500, 1000, 2000, 5000, Inf),
-  values = "inferno"
-)
-```
-
-```{r}
-#| fig-width: 6
-#| fig-height: 5
-
-# Map of Night Lights Intensity Pre Storm
-
-tm_shape(pre_storm_houston) +
-
-  tm_raster(
-    col.legend = tm_legend(title = "Light Intensity (nW cm⁻² sr⁻¹)"),
-    col.scale = light_scale
-  ) +
-
-  tm_graticules(col = "white", lwd = 0.65, alpha = 0.2, labels.size = 0.5) +
-
-  tm_scalebar(
-    position = tm_pos_out("right", "center"),
-    text.size = 0.5,
-    bg.color = "white"
-  ) +
-
-  tm_layout(
-    legend.position = tm_pos_out("right", "center"),
-    legend.frame = TRUE
-  ) +
-
-  tm_title(
-    "Houston Night Light Intensities\nFeb 07, 2021 (Pre Storm)",
-    size = 0.8
-  )
-```
-
-
-```{r}
-#| fig-width: 6
-#| fig-height: 5
-
-# Map of Night Lights Intensity Post Storm
-
-tm_shape(post_storm_houston) +
-
-  tm_raster(
-    col.legend = tm_legend(title = "Light Intensity (nW cm⁻² sr⁻¹)"),
-    col.scale = light_scale
-  ) +
-
-  tm_graticules(col = "white", lwd = 0.65, alpha = 0.2, labels.size = 0.5) +
-
-  tm_scalebar(position = tm_pos_out("right", "center"), text.size = 0.5) +
-
-  tm_layout(
-    legend.position = tm_pos_out("right", "center"),
-    legend.frame = TRUE
-  ) +
-
-  tm_title(
-    "Houston Night Light Intensities\nFeb 16, 2021 (Post Storms)",
-    size = 0.8
-  )
 ```
