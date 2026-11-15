@@ -15,7 +15,6 @@ execute:
 
 
 ## Load in Libraries and Data
-
 ```{r}
 #| message: false
 #| warning: false
@@ -83,8 +82,6 @@ houses <- st_read(
 )
 ```
 
-
-
 #### Transform Data to Match CRSs
 ```{r}
 # Transform CRSs
@@ -104,8 +101,8 @@ st_crs(highway) == st_crs(houses)
 ```
 
 
-
 ## Comparing Night Light Intensities
+#### Data Preperation
 ```{r}
 # Combine the two tiles for each date
 pre_storm <- st_mosaic(light_feb_07_h5, light_feb_07_h6) # pre storm
@@ -143,14 +140,13 @@ names(combined_storm) <- c(
 )
 ```
 
+## Map of Night Lights Intensity Pre Storm
 ```{r}
 #| fig-width: 9
 #| fig-height: 6
 
-# Map of Night Lights Intensity Pre Storm
-
+# Map the combined tiles
 tm_shape(combined_storm) +
-
   tm_raster(
     col.legend = tm_legend(
       title = "Light Intensity (nW cm⁻² sr⁻¹)",
@@ -161,8 +157,10 @@ tm_shape(combined_storm) +
     col.scale = tm_scale(values = "inferno")
   ) +
 
+  # Compare the tiles side-by-side
   tm_facets(ncol = 2, free.scales = FALSE) +
 
+  # Add graticules
   tm_graticules(
     col = "white",
     lwd = 0.3,
@@ -173,6 +171,7 @@ tm_shape(combined_storm) +
     n.y = 4
   ) +
 
+  # Customize legend
   tm_layout(
     scale = 0.8,
     legend.position = tm_pos_out("center", "bottom"),
@@ -184,6 +183,7 @@ tm_shape(combined_storm) +
     panel.label.size = 1.0
   ) +
 
+  # Add a title
   tm_title(
     "Houston Night Light Intensities Before and After Winter Storm",
     size = 1.2
@@ -191,9 +191,7 @@ tm_shape(combined_storm) +
 ```
 
 
-
 ## Create Blackout Mask
-
 #### Reclassify the cells
 ```{r}
 # Calculate difference (change) in night light intensity
@@ -284,22 +282,28 @@ not_impacted_homes <- all_homes[!all_homes$osm_id %in% blackout_homes$osm_id, ]
 impacted_homes <- st_centroid(blackout_homes)
 ```
 
+
 ## Map of the Homes that Lost Power
 ```{r}
 #| fig-width: 9
 #| fig-height: 6
 
+# Add a basemap
 tm_basemap("OpenStreetMap") +
 
+  # Add motorways
   tm_shape(highway) +
   tm_lines(col = "darkgoldenrod1", lwd = 0.8) +
 
+  # Add homes where power was maintained
   tm_shape(not_impacted_homes) +
   tm_dots(fill = "chartreuse2", size = 0.01, fill_alpha = 0.3) +
 
+  # Add homes where power was lost
   tm_shape(impacted_homes) +
   tm_dots(fill = "firebrick1", size = 0.01, fill_alpha = 0.5) +
 
+  # Customize legend for home layers
   tm_add_legend(
     type = "symbols",
     labels = c("Power lost", "Power maintained"),
@@ -309,8 +313,10 @@ tm_basemap("OpenStreetMap") +
     title = "Homes"
   ) +
 
+  # Add a title
   tm_title("Houston Homes Impacted by Feb 2021 Winter Storms") +
 
+  # Customize legend layout
   tm_layout(
     legend.position = tm_pos_in("left", "top"),
     legend.bg.color = "white",
@@ -319,6 +325,7 @@ tm_basemap("OpenStreetMap") +
     legend.frame = TRUE
   ) +
 
+  # Customize legend for motorways layer
   tm_add_legend(
     type = "lines",
     labels = "Major Highway",
@@ -326,8 +333,10 @@ tm_basemap("OpenStreetMap") +
     lwd = 0.8
   ) +
 
+  # Add a scalebar
   tm_scalebar(position = c("right", "bottom"), text.size = 0.5) +
 
+  # Add a compass
   tm_compass(position = c("right", "top"), size = 1.5)
 ```
 

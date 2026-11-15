@@ -1,8 +1,9 @@
 # Identifying the Impacts of the 2021 Winter Storm in Texas
 
 
-![](images/texasblackout.png)
-
+<p align ="center">
+<img src="images/texasblackout.png" width="75%">
+</p>
 
 <p align ="center">
 <a href ="https://www.nytimes.com/2011/02/03/us/03storm.html">Texas Blackout</a>
@@ -18,19 +19,18 @@ In February 2021, three severe winter storms swept across the United States, cau
 
 ## Package Dependencies 
 
-* `tidyverse`
-
-* `sf`
+* `tidyverse`        
 
 * `here`
-
-* `tmap`
 
 * `terra`
 
 * `stars`
 
-* `kableExtra`
+* `sf`
+
+* `tmap`
+
 
 
 
@@ -68,7 +68,7 @@ The `images` folder contains images that were used for the README and results se
 
 ## Results 
 
-IMAGE GOES HERE
+![](images/lights.png)
 
 
 

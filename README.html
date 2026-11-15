@@ -53,9 +53,11 @@ ul.task-list li input[type="checkbox"] {
 
 
 
-<section id="identifying-the-impacts-of-the-2011-texas-winter-storms" class="level1">
-<h1>Identifying the Impacts of the 2011 Texas Winter Storms</h1>
-<p><img src="images/texasblackout.png" class="img-fluid"></p>
+<section id="identifying-the-impacts-of-the-2021-winter-storm-in-texas" class="level1">
+<h1>Identifying the Impacts of the 2021 Winter Storm in Texas</h1>
+<p align="center">
+<img src="images/texasblackout.png" width="75%">
+</p>
 <p align="center">
 <a href="https://www.nytimes.com/2011/02/03/us/03storm.html">Texas Blackout</a>
 </p>
@@ -71,12 +73,29 @@ ul.task-list li input[type="checkbox"] {
 <li><p><code>here</code></p></li>
 <li><p><code>tmap</code></p></li>
 <li><p><code>terra</code></p></li>
+<li><p><code>stars</code></p></li>
 <li><p><code>kableExtra</code></p></li>
 </ul>
 </section>
 <section id="file-structure" class="level2">
 <h2 class="anchored" data-anchor-id="file-structure">File Structure</h2>
-<pre><code></code></pre>
+<pre><code>EDS223-HWK4
+├── data
+│   ├── ACS_2019_5YR_TRACT_48_TEXAS.gdb
+│   ├── gis_osm_buildings_a_free_1.gpkg
+│   ├── gis_osm_roads_free_1.gpkg
+│   └── VNP46A1
+│       ├── VNP46A1.A2021038.h08v05.001.2021039064328.tif
+│       ├── VNP46A1.A2021038.h08v06.001.2021039064329.tif
+│       ├── VNP46A1.A2021047.h08v05.001.2021048091106.tif
+│       └── VNP46A1.A2021047.h08v06.001.2021048091105.tif
+├── images
+│   └── texasblackout.png
+├── README_files
+├── README.html
+├── README.md
+|── texas_winter_storm.pdf
+└── texas_winter_storm.qmd</code></pre>
 </section>
 <section id="repository-contents" class="level2">
 <h2 class="anchored" data-anchor-id="repository-contents">Repository Contents</h2>
@@ -85,12 +104,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>IMAGE GOES HERE</p>
+<p><img src="images/lights.png" class="img-fluid"></p>
 </section>
 <section id="data-informationaccess" class="level2">
 <h2 class="anchored" data-anchor-id="data-informationaccess">Data Information/Access</h2>
-<section id="night-lights" class="level4">
-<h4 class="anchored" data-anchor-id="night-lights">Night Lights</h4>
+<section id="night-lights" class="level3">
+<h3 class="anchored" data-anchor-id="night-lights">Night Lights</h3>
 <p>This analysis uses NASA’s Worldview to explore the data around the day of the storm. There are several days with too much cloud cover to be useful, but 2021-02-07 and 2021-02-16 provide two clear, contrasting images to visualize the extent of the power outage in Texas.</p>
 <p>VIIRS data is distributed through NASA’s <a href="https://ladsweb.modaps.eosdis.nasa.gov/">Level-1 and Atmospheric Archive &amp; Distribution System Distributed Active Archive Center (LAADS DAAC)</a>.</p>
 <p>To prevent this analysis from being a large data wrangling challenge, we have downloaded and prepped the following files for you to work with, stored in the <code>VNP46A1</code> folder.</p>
@@ -102,16 +121,16 @@ ul.task-list li input[type="checkbox"] {
 <li><code>VNP46A1.A2021047.h08v06.001.2021048091105.tif</code>: tile h08v06, collected on 2021-02-16</li>
 </ul>
 </section>
-<section id="roads" class="level4">
-<h4 class="anchored" data-anchor-id="roads">Roads</h4>
+<section id="roads" class="level3">
+<h3 class="anchored" data-anchor-id="roads">Roads</h3>
 <p>Highways account for a large portion of the night lights observable from space (see Google’s <a href="https://earth.google.com/web/data=MkEKPwo9CiExMzY2MmI4dER6am1uT1I3RFFnUUxaSlJPbDl5SFF2X3YSFgoUMDAwNjEzMUVFNjJCOTgwOUJCQkQgAUICCABKCAiJ1OmVAhAB">Earth at Night</a>). To minimize falsely identifying areas with reduced traffic as areas without power, we ignored areas near highways.</p>
 <p><a href="https://planet.openstreetmap.org/">OpenStreetMap (OSM)</a> is a collaborative project which creates publicly available geographic data of the world. Ingesting this data into a database where it can be subsetted and processed is a large undertaking. Fortunately, third party companies redistribute OSM data. We used <a href="https://download.geofabrik.de/">Geofabrik’s download sites</a> to retrieve a shapefile of all highways in Texas and prepared a Geopackage (<code>.gpkg</code> file) containing just the subset of roads that intersect the Houston metropolitan area.</p>
 <ul>
 <li><code>gis_osm_roads_free_1.gpkg</code></li>
 </ul>
 </section>
-<section id="houses" class="level4">
-<h4 class="anchored" data-anchor-id="houses">Houses</h4>
+<section id="houses" class="level3">
+<h3 class="anchored" data-anchor-id="houses">Houses</h3>
 <p>We can also obtain building data from OpenStreetMap. We again downloaded from Geofabrick and prepared a GeoPackage containing only houses in the Houston metropolitan area.</p>
 <ul>
 <li><code>gis_osm_buildings_a_free_1.gpkg</code></li>
@@ -123,8 +142,9 @@ ul.task-list li input[type="checkbox"] {
 <p>Author: <a href="https://github.com/ethan-mathews24">Ethan Mathews</a></p>
 <p>Contributor: <a href="https://github.com/annieradams">Annie Adams</a></p>
 </section>
-<section id="citations" class="level2">
-<h2 class="anchored" data-anchor-id="citations">Citations</h2>
+<section id="data-citations" class="level2">
+<h2 class="anchored" data-anchor-id="data-citations">Data Citations</h2>
+<p>Geofabrik. (n.d.). US South [OpenStreetMap data extract]. Retrieved November 12, 2026, from https://download.geofabrik.de/north-america/us-south.html</p>
 </section>
 </section>
 
