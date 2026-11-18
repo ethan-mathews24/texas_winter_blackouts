@@ -30,6 +30,7 @@ library(tmap) # Thematic mapping
 
 
 # Load in Night Lights data
+
 # Read in each .tif for each date
 light_feb_07_h5 <- read_stars(here(
   "data",
@@ -52,8 +53,8 @@ light_feb_16_h6 <- read_stars(here(
   "VNP46A1.A2021047.h08v06.001.2021048091105.tif"
 ))
 
+# Load in OpenStreetMap road data
 
-# Load in OpenStreetMap data
 # SQL query to select only motorway
 roads_query <- "SELECT * FROM gis_osm_roads_free_1 WHERE fclass='motorway'"
 
@@ -64,8 +65,8 @@ highway <- st_read(
   quiet = TRUE # ignore warning message
 )
 
+# Load in OpenStreetMap building data
 
-# Load in OpenStreetMap data
 # SQL query to select only residential buildings
 houses_query <- "SELECT *
                  FROM gis_osm_buildings_a_free_1
@@ -84,10 +85,9 @@ houses <- st_read(
 
 #### Transform Data to Match CRSs
 ```{r}
-# Transform CRSs
+# Transform CRSs'
 highway <- st_transform(highway, crs = 3083)
 houses <- st_transform(houses, crs = 3083)
-
 
 # Run conditional to make sure transform worked
 if (st_crs(highway) != st_crs(houses)) {
@@ -96,7 +96,7 @@ if (st_crs(highway) != st_crs(houses)) {
   )
 }
 
-# Verify CRSs match
+# Verify CRSs' match
 st_crs(highway) == st_crs(houses)
 ```
 
@@ -106,8 +106,7 @@ st_crs(highway) == st_crs(houses)
 ```{r}
 # Combine the two tiles for each date
 pre_storm <- st_mosaic(light_feb_07_h5, light_feb_07_h6) # pre storm
-post_storm <- st_mosaic(light_feb_16_h5, light_feb_16_h6) # during blackouts
-
+post_storm <- st_mosaic(light_feb_16_h5, light_feb_16_h6) # during blackout
 
 # Create the bbox extent of Houston
 houston_bbox <- st_bbox(
@@ -115,11 +114,9 @@ houston_bbox <- st_bbox(
   crs = st_crs(pre_storm)
 )
 
-
 # Clip extent of the raster layers
 pre_storm_houston <- st_crop(pre_storm, houston_bbox)
 post_storm_houston <- st_crop(post_storm, houston_bbox)
-
 
 # Mask unrealistic values (>1000 or <= 0)
 masked_pre_storm <- pre_storm_houston
@@ -128,12 +125,10 @@ masked_pre_storm[(masked_pre_storm > 1000) | (masked_pre_storm <= 0)] <- NA
 masked_post_storm <- post_storm_houston
 masked_post_storm[(masked_post_storm > 1000) | (masked_post_storm <= 0)] <- NA
 
-
 # Combine layers for mapping
 combined_storm <- c(masked_pre_storm, masked_post_storm)
 
-
-# Change names for better visualizations
+# Change names for better map visualizations
 names(combined_storm) <- c(
   "February 7, 2021 (Pre-Storm)",
   "February 16, 2021 (Post-Storm)"
@@ -185,7 +180,7 @@ tm_shape(combined_storm) +
 
   # Add a title
   tm_title(
-    "Houston Night Light Intensities Before and After Winter Storm",
+    "Houston Night Light Before and After 2021 Winter Storm",
     size = 1.2
   )
 ```
@@ -196,7 +191,6 @@ tm_shape(combined_storm) +
 ```{r}
 # Calculate difference (change) in night light intensity
 light_diff <- rast(pre_storm) - rast(post_storm)
-
 
 # Reclassify the cells and drop any less than 200 nW cm⁻²sr⁻¹
 rcl <- matrix(
@@ -212,14 +206,13 @@ rcl <- matrix(
   byrow = TRUE
 )
 
+# Reclassify
 blackout_mask <- classify(light_diff, rcl = rcl)
-
 
 # Vectorize the raster into polygons
 blackout_vector <- st_as_stars(blackout_mask) |>
   st_as_sf() |>
   st_make_valid()
-
 
 # Crop the polygon to Houston extent
 houston_blackout <- st_crop(blackout_vector, houston_bbox) |>
@@ -233,14 +226,12 @@ if (st_crs(houston_blackout) != st_crs(houses)) {
   stop("Update CRSs so they match!")
 }
 
-
 # Run check to make sure highways matches houston CRS
 if (st_crs(houston_blackout) != st_crs(highway)) {
   stop("Update CRSs so they match!")
 }
 
-
-# Verify
+# Verify CRSs' match
 st_crs(houston_blackout) == st_crs(houses)
 st_crs(houston_blackout) == st_crs(highway)
 ```
@@ -252,14 +243,11 @@ highway_buffer <- highway |>
   st_union() |>
   st_buffer(dist = 200)
 
-
 # Remove highway buffers from blackout areas
 blackout_no_highways <- st_difference(houston_blackout, highway_buffer)
 
-
 # Identify buildings in blackout areas
 blackout_homes <- st_intersection(houses, blackout_no_highways)
-
 ```
 
 #### Identify Homes Likely Impacted by Blackouts
@@ -340,7 +328,5 @@ tm_basemap("OpenStreetMap") +
   tm_compass(position = c("right", "top"), size = 1.5)
 ```
 
-
 ## Reflection
-
 Comparing VIIRS night lights from February 7 and February 16, 2021 shows a widespread drop in light intensity across Houston after the winter storms. After identifying cells with a decrease greater than 200 nW cm⁻² sr⁻¹ and excluding areas within 200 m of highways, an estimated 157,408 homes lost power. This approach has several limitations. The 200 nW cm⁻² sr⁻¹ threshold is somewhat arbitrary, the comparison relies on only two cloud-free dates, and the coarse raster resolution means entire cells are labeled as blackouts. OpenStreetMap building data may also be incomplete and not have the correct building classification. Finally, this analysis does not examine whether impacts differed across socioeconomic groups.

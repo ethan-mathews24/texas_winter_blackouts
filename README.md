@@ -49,6 +49,7 @@ EDS223-HWK4
 │       └── VNP46A1.A2021047.h08v06.001.2021048091105.tif
 ├── images
 │   └── texasblackout.png
+|   └── lights.png
 ├── README_files
 ├── README.html
 ├── README.md
